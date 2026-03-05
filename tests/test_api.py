@@ -61,7 +61,8 @@ app.dependency_overrides[get_storage] = mock_get_storage
 def test_read_main():
     response = client.get("/")
     assert response.status_code == 200
-    assert response.json() == {"message": "Welcome to APN Collection API", "docs_url": "/docs"}
+    assert "<html" in response.text
+    assert "<title>APN Collection Manager</title>" in response.text
 
 def test_get_cameras():
     response = client.get("/api/v1/cameras/")

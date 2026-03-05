@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from api.router import router as camera_router
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import os
 
 app = FastAPI(
@@ -24,9 +26,12 @@ app.add_middleware(
 
 app.include_router(camera_router, prefix="/api/v1")
 
+# Mount static files for the UI
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 @app.get("/")
 def root():
-    return {"message": "Welcome to APN Collection API", "docs_url": "/docs"}
+    return FileResponse("static/index.html")
 
 if __name__ == "__main__":
     import uvicorn
