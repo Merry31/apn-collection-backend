@@ -22,5 +22,8 @@ steps:
       - 'managed'
       - '--allow-unauthenticated' # Remove if API should be private
 
+options:
+  logging: CLOUD_LOGGING_ONLY
+
 images:
   - 'gcr.io/$PROJECT_ID/apn-collection-api:$COMMIT_SHA'
