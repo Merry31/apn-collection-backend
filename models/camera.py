@@ -9,6 +9,7 @@ class CameraBase(BaseModel):
     format: Optional[str] = Field(None, description="Film format or sensor size, e.g., 35mm, Medium Format, Full Frame")
     condition: Optional[str] = Field(None, description="Physical and working condition")
     notes: Optional[str] = Field(None, description="Any additional notes about this specific camera")
+    image_urls: Optional[List[str]] = Field(default_factory=list, description="List of image URLs associated with the camera")
 
 class CameraCreate(CameraBase):
     pass
@@ -21,6 +22,7 @@ class CameraUpdate(BaseModel):
     format: Optional[str] = None
     condition: Optional[str] = None
     notes: Optional[str] = None
+    image_urls: Optional[List[str]] = None
 
 class CameraInDB(CameraBase):
     id: str = Field(..., description="Firestore document ID")

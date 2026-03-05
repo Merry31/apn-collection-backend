@@ -1,12 +1,16 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from typing import List
 from models.camera import CameraCreate, CameraUpdate, CameraInDB
 from services.firestore_db import FirestoreDB
+from services.gcs_storage import GCSStorage
 
 router = APIRouter(prefix="/cameras", tags=["cameras"])
 
 def get_db():
     return FirestoreDB()
+
+def get_storage():
+    return GCSStorage()
 
 @router.get("/", response_model=List[CameraInDB])
 def read_cameras(db: FirestoreDB = Depends(get_db)):
@@ -48,3 +52,29 @@ def delete_camera(camera_id: str, db: FirestoreDB = Depends(get_db)):
         raise
     except Exception as e:
          raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/{camera_id}/images", response_model=CameraInDB)
+async def upload_camera_image(
+    camera_id: str, 
+    file: UploadFile = File(...), 
+    db: FirestoreDB = Depends(get_db),
+    storage: GCSStorage = Depends(get_storage)
+):
+    camera = db.get_camera(camera_id)
+    if not camera:
+        raise HTTPException(status_code=404, detail="Camera not found")
+    
+    try:
+        # Upload to Google Cloud Storage
+        image_url = await storage.upload_image(camera_id, file)
+        
+        # Update camera object with new image URL
+        current_urls = camera.image_urls or []
+        current_urls.append(image_url)
+        update_data = CameraUpdate(image_urls=current_urls)
+        
+        updated_camera = db.update_camera(camera_id, update_data)
+        return updated_camera
+
+    except Exception as e:
+         raise HTTPException(status_code=500, detail=f"Failed to upload image: {str(e)}")

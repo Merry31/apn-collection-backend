@@ -46,3 +46,32 @@ def test_create_and_get_camera(setup_teardown_db):
     # Clean up (Delete)
     delete_response = client.delete(f"/api/v1/cameras/{cam_id}")
     assert delete_response.status_code == 204
+
+def test_upload_image_integration(setup_teardown_db):
+    new_cam = {
+        "brand": "UploadTestBrand",
+        "model": "UploadTestModel",
+        "type": "Digital",
+        "year": 2024
+    }
+    
+    # Create
+    create_response = client.post("/api/v1/cameras/", json=new_cam)
+    assert create_response.status_code == 201
+    cam_id = create_response.json()["id"]
+
+    try:
+        # Upload Image
+        files = {'file': ('test_integration.jpg', b'dummy content', 'image/jpeg')}
+        upload_response = client.post(f"/api/v1/cameras/{cam_id}/images", files=files)
+        
+        assert upload_response.status_code == 200
+        
+        updated_cam = upload_response.json()
+        assert "image_urls" in updated_cam
+        assert len(updated_cam["image_urls"]) == 1
+        assert "storage.googleapis.com" in updated_cam["image_urls"][0]
+        
+    finally:
+        # Clean up (Delete)
+        client.delete(f"/api/v1/cameras/{cam_id}")

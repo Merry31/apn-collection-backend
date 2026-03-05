@@ -1,0 +1,38 @@
+import uuid
+from google.cloud import storage
+from fastapi import UploadFile
+import os
+
+class GCSStorage:
+    def __init__(self, project_id: str = "apn-collection-backend-dev", bucket_name: str = "apn-collection-images-dev"):
+        self.bucket_name = bucket_name
+        self.project_id = project_id
+        try:
+            self.client = storage.Client(project=project_id)
+            self.bucket = self.client.bucket(bucket_name)
+        except Exception as e:
+            print(f"Failed to initialize GCS Client: {e}")
+            self.client = None
+            self.bucket = None
+
+    async def upload_image(self, camera_id: str, file: UploadFile) -> str:
+        """
+        Uploads an image to GCS and returns the public URL.
+        """
+        if not self.bucket:
+            raise Exception("GCS Client not initialized")
+
+        # Generate a unique filename using UUID to prevent collisions
+        file_extension = os.path.splitext(file.filename)[1]
+        unique_filename = f"{camera_id}/{uuid.uuid4()}{file_extension}"
+        
+        blob = self.bucket.blob(unique_filename)
+
+        # Upload the file
+        blob.upload_from_file(file.file, content_type=file.content_type)
+        
+        # Return the public URL for the newly uploaded file
+        # Note: bucket is private, we will either need signed URLs or make bucket public for reads. 
+        # Using authenticated URLs for now if the client handles it, or just returning path.
+        # Format: https://storage.googleapis.com/{bucket_name}/{object_name}
+        return f"https://storage.googleapis.com/{self.bucket_name}/{unique_filename}"

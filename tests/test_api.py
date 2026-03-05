@@ -4,9 +4,14 @@ from unittest.mock import MagicMock, patch
 
 from main import app
 from services.firestore_db import FirestoreDB
+from services.gcs_storage import GCSStorage
 from models.camera import CameraInDB, CameraCreate
 
 client = TestClient(app)
+
+class AsyncMock(MagicMock):
+    async def __call__(self, *args, **kwargs):
+        return super(AsyncMock, self).__call__(*args, **kwargs)
 
 # Helper function to mock the get_db dependency
 def mock_get_db():
@@ -33,12 +38,25 @@ def mock_get_db():
     def mock_delete_camera_func(camera_id):
         return camera_id == "mock-id-1"
     mock_db.delete_camera.side_effect = mock_delete_camera_func
+    
+    # Mock update_camera
+    def mock_update_camera_func(camera_id, update_data):
+         if camera_id == "mock-id-1":
+             return CameraInDB(id="mock-id-1", brand="Canon", model="AE-1", type="Film", year=1976, format="35mm", image_urls=update_data.image_urls)
+         return None
+    mock_db.update_camera.side_effect = mock_update_camera_func
 
     return mock_db
 
-# Override the dependency
-from api.router import get_db
+def mock_get_storage():
+    mock_storage = MagicMock(spec=GCSStorage)
+    mock_storage.upload_image = AsyncMock(return_value="https://storage.googleapis.com/mock-bucket/mock-id/mock-uuid.jpg")
+    return mock_storage
+
+# Override the dependencies
+from api.router import get_db, get_storage
 app.dependency_overrides[get_db] = mock_get_db
+app.dependency_overrides[get_storage] = mock_get_storage
 
 def test_read_main():
     response = client.get("/")
@@ -82,3 +100,13 @@ def test_delete_camera():
 def test_delete_camera_not_found():
     response = client.delete("/api/v1/cameras/non-existent-id")
     assert response.status_code == 404
+
+def test_upload_image():
+    # simulate file upload
+    files = {'file': ('test_image.jpg', b'dummy content', 'image/jpeg')}
+    response = client.post("/api/v1/cameras/mock-id-1/images", files=files)
+    assert response.status_code == 200
+    data = response.json()
+    assert "image_urls" in data
+    assert "https://storage.googleapis.com/mock-bucket/mock-id/mock-uuid.jpg" in data["image_urls"]
+
