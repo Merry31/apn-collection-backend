@@ -1,0 +1,17 @@
+# Environments
+venv/
+env/
+.env
+__pycache__/
+*.pyc
+*.pyo
+
+# Testing
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
