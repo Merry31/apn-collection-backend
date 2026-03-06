@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Configuration
-PROJECT_ID="apn-collection-backend-dev"
+PROJECT_ID="apn-collection-backend-d-9fa01"
 REGION="europe-west1"
 SERVICE_ACCOUNT="apn-collection-sa@${PROJECT_ID}.iam.gserviceaccount.com"
-BUCKET_NAME="apn-collection-images-dev"
+BUCKET_NAME="apn-collection-backend-d-9fa01.firebasestorage.app"
 
 echo "Setting up IAM roles and Service Account for APN Collection Backend..."
 

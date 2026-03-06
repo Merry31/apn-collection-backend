@@ -17,7 +17,7 @@ client = TestClient(app)
 @pytest.fixture(scope="module")
 def setup_teardown_db():
     # Uses the normal dependancy which will instantiate FirestoreDB
-    # It will use `apn-collection-backend-dev` by default
+    # It will use `apn-collection-backend-d-9fa01` by default
     db = FirestoreDB()
     
     # Override auth dependency for tests
