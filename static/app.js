@@ -49,7 +49,6 @@ let selectedFile = null;
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     setupAuthListeners();
-    fetchCameras();
 });
 
 // --- Auth Interactions ---
@@ -96,8 +95,14 @@ function setupAuthListeners() {
 // --- API Interactions ---
 
 async function fetchCameras() {
+    if (!currentUserToken) {
+        camerasGrid.innerHTML = `<div class="loading-state"><i class="fa-solid fa-lock" style="font-size: 2rem; color: var(--text-muted)"></i><p>Sign in to view collection.</p></div>`;
+        return;
+    }
+
     try {
-        const response = await fetch(`${API_BASE}/`);
+        const headers = { 'Authorization': `Bearer ${currentUserToken}` };
+        const response = await fetch(`${API_BASE}/`, { headers });
         if (!response.ok) throw new Error('Failed to fetch cameras');
         const cameras = await response.json();
         renderCameras(cameras);

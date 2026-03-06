@@ -14,11 +14,11 @@ def get_storage():
     return GCSStorage()
 
 @router.get("/", response_model=List[CameraInDB])
-def read_cameras(db: FirestoreDB = Depends(get_db)):
+def read_cameras(db: FirestoreDB = Depends(get_db), user: dict = Depends(verify_firebase_token)):
     return db.get_cameras()
 
 @router.get("/{camera_id}", response_model=CameraInDB)
-def read_camera(camera_id: str, db: FirestoreDB = Depends(get_db)):
+def read_camera(camera_id: str, db: FirestoreDB = Depends(get_db), user: dict = Depends(verify_firebase_token)):
     camera = db.get_camera(camera_id)
     if camera is None:
         raise HTTPException(status_code=404, detail="Camera not found")
