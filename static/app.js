@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
 
 const API_BASE = '/api/v1/cameras';
 const firebaseConfig = {
@@ -15,6 +16,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
+const storage = getStorage(app);
 
 let currentUserToken = null;
 let currentUserId = null;
@@ -216,7 +218,7 @@ async function uploadImage() {
 
 // --- UI Rendering ---
 
-function renderCameras(cameras) {
+async function renderCameras(cameras) {
     if (cameras.length === 0) {
         camerasGrid.innerHTML = `
             <div class="loading-state">
@@ -226,14 +228,38 @@ function renderCameras(cameras) {
         return;
     }
 
-    camerasGrid.innerHTML = cameras.map(cam => {
-        // Use first image if exists, otherwise show placeholder
-        const hasImage = cam.image_urls && cam.image_urls.length > 0;
-        const imgContent = hasImage
-            ? `<img src="${cam.image_urls[cam.image_urls.length - 1]}" alt="${cam.brand} ${cam.model}">`
-            : `<i class="fa-solid fa-camera placeholder"></i>`;
+    // Prepare HTML string with placeholders for images
+    let html = '';
+    const imagePromises = [];
 
-        return `
+    for (const cam of cameras) {
+        const hasImage = cam.image_urls && cam.image_urls.length > 0;
+        const imgPlaceholderId = `img-placeholder-${cam.id}`;
+
+        let imgContent;
+        if (hasImage) {
+            const imagePath = cam.image_urls[cam.image_urls.length - 1];
+            // If it's already a full HTTP URL (e.g., from before the migration), use it directly
+            if (imagePath.startsWith('http')) {
+                imgContent = `<img src="${imagePath}" alt="${cam.brand} ${cam.model}">`;
+            } else {
+                // Otherwise, show a loading placeholder and fetch URL
+                imgContent = `<div class="loading-state" id="${imgPlaceholderId}" style="height: 100%;"><div class="spinner" style="width:20px;height:20px;"></div></div>`;
+
+                // Queue the promise to fetch the Download URL
+                const promise = getDownloadURL(ref(storage, imagePath)).then(url => {
+                    return { id: imgPlaceholderId, url: url, alt: `${cam.brand} ${cam.model}` };
+                }).catch(err => {
+                    console.error("Error fetching image URL", err);
+                    return { id: imgPlaceholderId, error: true };
+                });
+                imagePromises.push(promise);
+            }
+        } else {
+            imgContent = `<i class="fa-solid fa-camera placeholder"></i>`;
+        }
+
+        html += `
             <article class="camera-card glass-panel html-tag-data-target" data-id="${cam.id}">
                 <div class="card-image">
                     ${imgContent}
@@ -268,7 +294,25 @@ function renderCameras(cameras) {
                 </div>
             </article>
         `;
-    }).join('');
+    }
+
+    camerasGrid.innerHTML = html;
+
+    // Resolve all image URLs and update the DOM
+    const results = await Promise.all(imagePromises);
+    for (const result of results) {
+        const placeholder = document.getElementById(result.id);
+        if (placeholder) {
+            if (result.error) {
+                placeholder.innerHTML = `<i class="fa-solid fa-image-slash placeholder"></i>`;
+            } else {
+                const img = document.createElement('img');
+                img.src = result.url;
+                img.alt = result.alt;
+                placeholder.replaceWith(img);
+            }
+        }
+    }
 }
 
 // --- Event Listeners & Modals ---

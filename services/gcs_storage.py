@@ -31,8 +31,6 @@ class GCSStorage:
         # Upload the file
         blob.upload_from_file(file.file, content_type=file.content_type)
         
-        # Return the public URL for the newly uploaded file
-        # Note: bucket is private, we will either need signed URLs or make bucket public for reads. 
-        # Using authenticated URLs for now if the client handles it, or just returning path.
-        # Format: https://storage.googleapis.com/{bucket_name}/{object_name}
-        return f"https://storage.googleapis.com/{self.bucket_name}/{unique_filename}"
+        # Return the object path instead of the public URL
+        # The frontend will use the Firebase Storage SDK to generate a temporary download URL.
+        return unique_filename
