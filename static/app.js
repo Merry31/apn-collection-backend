@@ -1,6 +1,7 @@
-const API_BASE = '/api/v1/cameras';
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
-// Firebase Setup
+const API_BASE = '/api/v1/cameras';
 const firebaseConfig = {
     apiKey: "AIzaSyDzP48q1O_qXqhmEEN8qONQRnsT24M5OIc",
     authDomain: "apn-collection-backend-d-9fa01.firebaseapp.com",
@@ -11,9 +12,9 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = window.firebaseModules.initializeApp(firebaseConfig);
-const auth = window.firebaseModules.getAuth(app);
-const googleProvider = new window.firebaseModules.GoogleAuthProvider();
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
 
 let currentUserToken = null;
 let currentUserId = null;
@@ -53,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --- Auth Interactions ---
 function setupAuthListeners() {
-    window.firebaseModules.onAuthStateChanged(auth, async (user) => {
+    onAuthStateChanged(auth, async (user) => {
         if (user) {
             // User is signed in
             currentUserId = user.uid;
@@ -79,11 +80,11 @@ function setupAuthListeners() {
     btnAuth.addEventListener('click', async () => {
         if (currentUserId) {
             // Sign out
-            await window.firebaseModules.signOut(auth);
+            await signOut(auth);
         } else {
             // Sign in
             try {
-                await window.firebaseModules.signInWithPopup(auth, googleProvider);
+                await signInWithPopup(auth, googleProvider);
             } catch (error) {
                 console.error("Auth error", error);
                 alert("Error signing in: " + error.message);

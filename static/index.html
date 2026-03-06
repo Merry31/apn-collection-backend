@@ -16,15 +16,7 @@
     <!-- Custom Styles -->
     <link rel="stylesheet" href="/static/styles.css">
 
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
-        // We will define the config in app.js
-        window.firebaseModules = { initializeApp, getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged };
-    </script>
-</head>
 
 <body>
     <div class="blob blob-1"></div>
@@ -163,7 +155,7 @@
     </div>
 
 
-    <script src="/static/app.js"></script>
+    <script type="module" src="/static/app.js"></script>
 </body>
 
 </html>
