@@ -3,6 +3,7 @@ import os
 from fastapi.testclient import TestClient
 from main import app
 from services.firestore_db import FirestoreDB
+from api.auth import verify_firebase_token
 
 # These tests will only run if a specific environment variable is set
 # because they require an actual Firestore connection (e.g. to a test project or emulator)
@@ -18,8 +19,13 @@ def setup_teardown_db():
     # Uses the normal dependancy which will instantiate FirestoreDB
     # It will use `apn-collection-backend-dev` by default
     db = FirestoreDB()
+    
+    # Override auth dependency for tests
+    app.dependency_overrides[verify_firebase_token] = lambda: {"uid": "test-user-id", "email": "test@example.com"}
+    
     yield db
     # Teardown: we could optionally delete all documents created during testing
+    app.dependency_overrides = {}
 
 def test_create_and_get_camera(setup_teardown_db):
     new_cam = {

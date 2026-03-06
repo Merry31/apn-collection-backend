@@ -3,6 +3,7 @@ from typing import List
 from models.camera import CameraCreate, CameraUpdate, CameraInDB
 from services.firestore_db import FirestoreDB
 from services.gcs_storage import GCSStorage
+from api.auth import verify_firebase_token
 
 router = APIRouter(prefix="/cameras", tags=["cameras"])
 
@@ -24,14 +25,23 @@ def read_camera(camera_id: str, db: FirestoreDB = Depends(get_db)):
     return camera
 
 @router.post("/", response_model=CameraInDB, status_code=201)
-def create_camera(camera: CameraCreate, db: FirestoreDB = Depends(get_db)):
+def create_camera(
+    camera: CameraCreate, 
+    db: FirestoreDB = Depends(get_db),
+    user: dict = Depends(verify_firebase_token)
+):
     try:
         return db.add_camera(camera)
     except Exception as e:
          raise HTTPException(status_code=500, detail=str(e))
 
 @router.put("/{camera_id}", response_model=CameraInDB)
-def update_camera(camera_id: str, camera_update: CameraUpdate, db: FirestoreDB = Depends(get_db)):
+def update_camera(
+    camera_id: str, 
+    camera_update: CameraUpdate, 
+    db: FirestoreDB = Depends(get_db),
+    user: dict = Depends(verify_firebase_token)
+):
     try:
         camera = db.update_camera(camera_id, camera_update)
         if camera is None:
@@ -43,7 +53,11 @@ def update_camera(camera_id: str, camera_update: CameraUpdate, db: FirestoreDB =
          raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/{camera_id}", status_code=204)
-def delete_camera(camera_id: str, db: FirestoreDB = Depends(get_db)):
+def delete_camera(
+    camera_id: str, 
+    db: FirestoreDB = Depends(get_db),
+    user: dict = Depends(verify_firebase_token)
+):
     try:
         success = db.delete_camera(camera_id)
         if not success:
@@ -58,7 +72,8 @@ async def upload_camera_image(
     camera_id: str, 
     file: UploadFile = File(...), 
     db: FirestoreDB = Depends(get_db),
-    storage: GCSStorage = Depends(get_storage)
+    storage: GCSStorage = Depends(get_storage),
+    user: dict = Depends(verify_firebase_token)
 ):
     camera = db.get_camera(camera_id)
     if not camera:

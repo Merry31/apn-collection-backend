@@ -1,5 +1,22 @@
 const API_BASE = '/api/v1/cameras';
 
+// Firebase Setup
+const firebaseConfig = {
+    apiKey: "AIzaSyDzP48q1O_qXqhmEEN8qONQRnsT24M5OIc",
+    authDomain: "apn-collection-backend-d-9fa01.firebaseapp.com",
+    projectId: "apn-collection-backend-d-9fa01",
+    storageBucket: "apn-collection-backend-d-9fa01.firebasestorage.app",
+    messagingSenderId: "925744932143",
+    appId: "1:925744932143:web:d3465122813cfd4ca06dda"
+};
+
+// Initialize Firebase
+const app = window.firebaseModules.initializeApp(firebaseConfig);
+const auth = window.firebaseModules.getAuth(app);
+const googleProvider = new window.firebaseModules.GoogleAuthProvider();
+
+let currentUserToken = null;
+let currentUserId = null;
 // DOM Elements
 const camerasGrid = document.getElementById('cameras-grid');
 const cameraModal = document.getElementById('camera-modal');
@@ -8,6 +25,11 @@ const btnAddCamera = document.getElementById('btn-add-camera');
 const btnCloseModal = document.getElementById('btn-close-modal');
 const modalTitle = document.getElementById('modal-title');
 const btnSaveCamera = document.getElementById('btn-save-camera');
+
+// Auth DOM Elements
+const btnAuth = document.getElementById('btn-auth');
+const authBtnText = document.getElementById('auth-btn-text');
+const userInfo = document.getElementById('user-info');
 
 // Image Modal Elements
 const imageModal = document.getElementById('image-modal');
@@ -24,7 +46,51 @@ const uploadCameraId = document.getElementById('upload-camera-id');
 let selectedFile = null;
 
 // Initialize
-document.addEventListener('DOMContentLoaded', fetchCameras);
+document.addEventListener('DOMContentLoaded', () => {
+    setupAuthListeners();
+    fetchCameras();
+});
+
+// --- Auth Interactions ---
+function setupAuthListeners() {
+    window.firebaseModules.onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            // User is signed in
+            currentUserId = user.uid;
+            currentUserToken = await user.getIdToken();
+
+            authBtnText.textContent = "Sign Out";
+            userInfo.textContent = user.email;
+            userInfo.classList.remove('hidden');
+            btnAddCamera.classList.remove('hidden');
+        } else {
+            // User is signed out
+            currentUserId = null;
+            currentUserToken = null;
+
+            authBtnText.textContent = "Sign In";
+            userInfo.classList.add('hidden');
+            btnAddCamera.classList.add('hidden');
+        }
+        // Re-render cameras to hide/show edit/delete buttons based on auth state
+        fetchCameras();
+    });
+
+    btnAuth.addEventListener('click', async () => {
+        if (currentUserId) {
+            // Sign out
+            await window.firebaseModules.signOut(auth);
+        } else {
+            // Sign in
+            try {
+                await window.firebaseModules.signInWithPopup(auth, googleProvider);
+            } catch (error) {
+                console.error("Auth error", error);
+                alert("Error signing in: " + error.message);
+            }
+        }
+    });
+}
 
 // --- API Interactions ---
 
@@ -53,9 +119,16 @@ async function saveCamera(cameraData, id = null) {
     btnSaveCamera.disabled = true;
 
     try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (currentUserToken) {
+            // Re-fetch token to ensure it's fresh
+            currentUserToken = await auth.currentUser.getIdToken();
+            headers['Authorization'] = `Bearer ${currentUserToken}`;
+        }
+
         const response = await fetch(url, {
             method: method,
-            headers: { 'Content-Type': 'application/json' },
+            headers: headers,
             body: JSON.stringify(cameraData)
         });
 
@@ -77,7 +150,15 @@ async function deleteCamera(id) {
     if (!confirm('Are you sure you want to delete this camera?')) return;
 
     try {
-        const response = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
+        const headers = {};
+        if (currentUserToken) {
+            currentUserToken = await auth.currentUser.getIdToken();
+            headers['Authorization'] = `Bearer ${currentUserToken}`;
+        }
+        const response = await fetch(`${API_BASE}/${id}`, {
+            method: 'DELETE',
+            headers: headers
+        });
         if (!response.ok) throw new Error('Failed to delete camera');
         fetchCameras();
     } catch (error) {
@@ -101,8 +182,15 @@ async function uploadImage() {
     btnConfirmUpload.disabled = true;
 
     try {
+        const headers = {};
+        if (currentUserToken) {
+            currentUserToken = await auth.currentUser.getIdToken();
+            headers['Authorization'] = `Bearer ${currentUserToken}`;
+        }
+
         const response = await fetch(`${API_BASE}/${id}/images`, {
             method: 'POST',
+            headers: headers,
             body: formData
         });
 
@@ -143,11 +231,12 @@ function renderCameras(cameras) {
             <article class="camera-card glass-panel html-tag-data-target" data-id="${cam.id}">
                 <div class="card-image">
                     ${imgContent}
+                    ${currentUserId ? `
                     <div class="image-overlay">
                         <button class="btn-primary btn-add-image" onclick="openImageModal('${cam.id}')">
                             <i class="fa-solid fa-upload"></i> Upload
                         </button>
-                    </div>
+                    </div>` : ''}
                 </div>
                 <div class="card-content">
                     <div class="card-brand">${cam.brand}</div>
@@ -161,6 +250,7 @@ function renderCameras(cameras) {
 
                     ${cam.notes ? `<p class="card-notes">${cam.notes}</p>` : '<p class="card-notes"><em>No notes</em></p>'}
 
+                    ${currentUserId ? `
                     <div class="card-actions">
                         <button class="btn-secondary btn-edit" onclick='openEditModal(${JSON.stringify(cam).replace(/'/g, "&#39;")})'>
                             <i class="fa-solid fa-pen"></i> Edit
@@ -168,7 +258,7 @@ function renderCameras(cameras) {
                         <button class="btn-danger btn-delete" onclick="deleteCamera('${cam.id}')">
                             <i class="fa-solid fa-trash"></i>
                         </button>
-                    </div>
+                    </div>` : ''}
                 </div>
             </article>
         `;

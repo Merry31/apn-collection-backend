@@ -6,6 +6,7 @@ from main import app
 from services.firestore_db import FirestoreDB
 from services.gcs_storage import GCSStorage
 from models.camera import CameraInDB, CameraCreate
+from api.auth import verify_firebase_token
 
 client = TestClient(app)
 
@@ -57,6 +58,7 @@ def mock_get_storage():
 from api.router import get_db, get_storage
 app.dependency_overrides[get_db] = mock_get_db
 app.dependency_overrides[get_storage] = mock_get_storage
+app.dependency_overrides[verify_firebase_token] = lambda: {"uid": "mock-user-id", "email": "mock@test.com"}
 
 def test_read_main():
     response = client.get("/")
