@@ -11,7 +11,7 @@ if not len(firebase_admin._apps):
         # In Cloud Run, it gets credentials from the attached service account.
         # Locally, it gets them from `gcloud auth application-default login`.
         # Set Explicit Project ID to validate tokens for the correct Firebase Project
-        firebase_admin.initialize_app(options={'projectId': 'apn-collection-backend-d-9fa01'})
+        firebase_admin.initialize_app(options={'projectId': 'apn-collection-backend-dev'})
     except Exception as e:
         print(f"Failed to initialize Firebase Admin: {e}")
 

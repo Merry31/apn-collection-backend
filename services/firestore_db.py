@@ -3,7 +3,7 @@ from models.camera import CameraCreate, CameraUpdate, CameraInDB
 from typing import List, Optional
 
 class FirestoreDB:
-    def __init__(self, project_id: str = "apn-collection-backend-d-9fa01"):
+    def __init__(self, project_id: str = "apn-collection-backend-dev"):
         # The client will automatically pick up application default credentials
         # from the environment when running in GCP, or from 'gcloud auth application-default login'
         # when running locally.

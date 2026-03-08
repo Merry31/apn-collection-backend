@@ -4,7 +4,7 @@ from fastapi import UploadFile
 import os
 
 class GCSStorage:
-    def __init__(self, project_id: str = "apn-collection-backend-d-9fa01", bucket_name: str = "apn-collection-backend-d-9fa01.firebasestorage.app"):
+    def __init__(self, project_id: str = "apn-collection-backend-dev", bucket_name: str = "apn-collection-backend-dev.firebasestorage.app"):
         self.bucket_name = bucket_name
         self.project_id = project_id
         try:

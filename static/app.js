@@ -4,12 +4,12 @@ import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebas
 
 const API_BASE = '/api/v1/cameras';
 const firebaseConfig = {
-    apiKey: "AIzaSyDzP48q1O_qXqhmEEN8qONQRnsT24M5OIc",
-    authDomain: "apn-collection-backend-d-9fa01.firebaseapp.com",
-    projectId: "apn-collection-backend-d-9fa01",
-    storageBucket: "apn-collection-backend-d-9fa01.firebasestorage.app",
-    messagingSenderId: "925744932143",
-    appId: "1:925744932143:web:d3465122813cfd4ca06dda"
+    apiKey: "AIzaSyD7mAYpzFFddL-5muaTQTLWljqLrBmwoGA",
+    authDomain: "apn-collection-backend-dev.firebaseapp.com",
+    projectId: "apn-collection-backend-dev",
+    storageBucket: "apn-collection-backend-dev.firebasestorage.app",
+    messagingSenderId: "937865998754",
+    appId: "1:937865998754:web:fa9f6d5f17e4b41e9102fb"
 };
 
 // Initialize Firebase
